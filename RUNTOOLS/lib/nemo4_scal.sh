@@ -5,6 +5,7 @@
 echo Running on $( hostname )
 echo NB_NPROC = $NB_NPROC
 echo NB_NODES = $NB_NODES
+echo NB_NPROC_PYCPL = $NB_NPROC_PYCPL
 ## check existence of directories. Create them if they do'nt exist
  # TMPDIR can be set (if necessary in includefile.sh)
 mkdir -p $TMPDIR
@@ -67,6 +68,22 @@ else
     exit 1
 fi
 
+# copy the python script to couple with nemo
+if [ $NB_NPROC_PYCPL -ne 0 ] ; then
+    if [ -f $PYEXEC ] ; then
+        rcopy $PYEXEC ./main.py
+    else
+        echo "   === ERROR: Python coupled config asked but python script not found"
+        exit 1
+    fi
+    if [ -f $MODELS ] ; then
+        rcopy $MODELS ./models.py
+    else
+        echo "   === ERROR: Python coupled config asked but models library not found"
+        exit 1
+    fi
+fi
+
 # copy list of CPPkeys ( available in EXE directory
 chkfile $P_EXE_DIR/CPP.keys
 if [ $? = 0 ] ; then
@@ -117,6 +134,7 @@ TOP=0     ;  if [ $(keychk key_top )     ] ; then TOP=1     ; fi
 FLOAT=0   ;  if [ $(keychk key_floats)   ] ; then FLOAT=1   ; fi
 CYCL=0    ;  if [ $(keychk key_cyclone)  ] ; then CYCL=1    ; fi
 DIAHARM=0 ;  if [ $(keychk key_diaharm)  ] ; then DIAHARM=1 ; fi
+OASIS=0   ;  if [ $(keychk key_oasis3)   ] ; then OASIS=1   ; fi
 
 # JMM fix for the time being
 CFC=0 ; C14=0 ; MYTRC=0
@@ -147,6 +165,17 @@ if [ $AGRIF = 1 ] ; then
         rcopy $P_CTL_DIR/${idx}_namelist.${CONFIG_CASE}_${JPNI}_${JPNJ}_${JPNIJ} ${idx}_namelist
         rcopy $P_CTL_DIR/${idx}_namelistio ${idx}_namelistio
     done
+fi
+
+# check if nemo is compiled with oasis if python coupled config
+echo "   *** OASIS = " $OASIS
+
+if [ $OASIS -eq 1 ] && [ $NB_NPROC_PYCPL -eq 0 ] ; then
+    echo "   === ERROR: key_oasis3 enabled but no Python coupled config set up"
+    exit 1
+elif [ $OASIS -eq 0 ] && [ $NB_NPROC_PYCPL -gt 0 ] ; then
+    echo "   === ERROR: Python coupled config set up but key_oasis3 disabled"
+    exit 1
 fi
 
 ## -------------------------------------
@@ -296,6 +325,22 @@ if [ $ICE != 0 ] ; then
 fi
 
 # XIOS stuff migrated after ensemble run check !
+
+# coupling stuff
+if [ $OASIS = 1 ] ; then
+    echo ' [2.4]  OASIS namelist'
+    echo " ========================="
+    if [ -f $P_CTL_DIR/namcouple ] ; then
+        rcopy $P_CTL_DIR/namcouple namcouple
+    else
+        echo "   *** namcouple not found in $P_CTL_DIR, running Eophis in preprod mode"
+        python3 ./main.py --exec preprod
+        mv eophis.out eophis_preprod.out.$no
+        mv eophis.err eophis_preprod.err.$no
+        cp eophis_preprod.out.$no $P_S_DIR/ANNEX
+        cp eophis_preprod.err.$no $P_S_DIR/ANNEX
+    fi
+fi
 
 echo ' [2.5]   Set flags according to namelists'
 echo " ========================================"
@@ -1035,15 +1080,28 @@ touch donecopy
 echo '(4) Run the code'
 echo '----------------'
 date
-if [ $XIOS = 1 -a $NB_NPROC_IOS != 0 ] ; then
-   NB_NCORE_DP=${NB_NCORE_DP:=0}
-   if [ $NB_NCORE_DP != 0 ] ; then
-      runcode_mpmd_dp  -dp $NB_NCORE_DP $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe
-   else
-      runcode_mpmd  $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe
-   fi
+if [ $OASIS = 1 ] ; then
+    if [ $XIOS = 1 -a $NB_NPROC_IOS != 0 ] ; then
+       NB_NCORE_DP=${NB_NCORE_DP:=0}
+       if [ $NB_NCORE_DP != 0 ] ; then
+          runcode_mpmd_dp  -dp $NB_NCORE_DP $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe $NB_NPROC_PYCPL ./main.py
+       else
+          runcode_mpmd  $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe $NB_NPROC_PYCPL ./main.py
+       fi
+    else
+        run_cplcode  $NB_NPROC ./nemo4.exe  $NB_NPROC_PYCPL ./main.py
+    fi
 else
-    runcode  $NB_NPROC ./nemo4.exe
+    if [ $XIOS = 1 -a $NB_NPROC_IOS != 0 ] ; then
+       NB_NCORE_DP=${NB_NCORE_DP:=0}
+       if [ $NB_NCORE_DP != 0 ] ; then
+          runcode_mpmd_dp  -dp $NB_NCORE_DP $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe
+       else
+          runcode_mpmd  $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe
+       fi
+    else
+        runcode  $NB_NPROC ./nemo4.exe
+    fi
 fi
 date
 exit  # Scalability tests stop here

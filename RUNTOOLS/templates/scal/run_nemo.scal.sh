@@ -6,7 +6,7 @@
 
 usage() {
    echo
-   echo "USAGE: $(basename $0) [-h] [-c CORES-per-node] jpni jpnj jpnij nxios"
+   echo "USAGE: $(basename $0) [-h] [-c CORES-per-node] jpni jpnj jpnij nxios npycpl"
    echo "  "
    echo "  PURPOSE:"
    echo "    Launch scalability experiment corresponding to domain decomposition given"
@@ -17,6 +17,7 @@ usage() {
    echo "    jpnj : number of subdomains in the J-direction"
    echo "    jpnij : Total number of ocean only subdomains."
    echo "    nxios : Number of xios_server.exe to be launched."
+   echo "    npycpl : Number of python scripts to be launched."
    echo "  "
    echo "  OPTIONS:"
    echo "    -h : print this usage message."
@@ -53,8 +54,9 @@ jpni=$1
 jpnj=$2
 jpnij=$3
 nxios=$4
+npycpl=$5
 
-ntasks=$(( jpnij + nxios ))
+ntasks=$(( jpnij + nxios + npycpl))
 nodes=$(( ntasks / ncpn ))
 if [ $(( ntasks % ncpn )) != 0 ] ; then
   nodes=$(( nodes + 1 ))
@@ -70,7 +72,8 @@ fi
 # create includefile.sh from template :
 cat ./includefile.sh.tmp | sed -e "s/<JPNI>/$jpni/g"   -e "s/<JPNJ>/$jpnj/g"   \
           -e "s/<JPNIJ>/$jpnij/g" -e "s/<NXIOS>/$nxios/g" -e "s/<NODES>/$nodes/g" \
-          -e "s/<NTASKS>/$ntasks/g" -e "s/<NCPN>/$ncpn/g" > includefile.sh_${jpni}_${jpnj}_${jpnij}
+          -e "s/<NTASKS>/$ntasks/g" -e "s/<NCPN>/$ncpn/g" -e "s/<NPYCPL>/$npycpl" \
+	  > includefile.sh_${jpni}_${jpnj}_${jpnij}
 
 . ./includefile.sh_${jpni}_${jpnj}_${jpnij}
 
@@ -81,7 +84,7 @@ cat ./namelist.${CONFIG_CASE}.tmp  | sed -e "s/<JPNI>/$jpni/g" -e "s/<JPNJ>/$jpn
 # Create submit script from template:
 cat ./${CONFIG_CASE}_${MACHINE}.sh.tmp  | sed -e "s/<JPNI>/$jpni/g" -e "s/<JPNJ>/$jpnj/g" \
           -e "s/<JPNIJ>/$jpnij/g" -e "s/<NXIOS>/$nxios/g" -e "s/<NCPN>/$ncpn/g" -e "s/<CONSTRAINT>/$constraint/g" \
-          -e "s/<NODES>/$nodes/g" -e "s/<NTASKS>/$ntasks/g" > ${SUBMIT_SCRIPT}
+          -e "s/<NODES>/$nodes/g" -e "s/<NTASKS>/$ntasks/g" -e "s/<NPYCPL>/$npycpl/g" > ${SUBMIT_SCRIPT}
 
 
 date

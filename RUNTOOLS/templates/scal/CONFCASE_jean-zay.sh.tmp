@@ -33,7 +33,7 @@ export NB_NCORE_DP=0        # activate depopulated core computation for XIOS. If
                             # the number of cores used by XIOS on each exclusive node.
 
 # OASIS coupling - set to 0 if not
-export NB_NPROC_PYCPL=0   # number of cores used for coupled python script
+export NB_NPROC_PYCPL=$NPYCPL   # number of cores used for coupled python script
 			   
 # no rebuild for scalability experiment
 

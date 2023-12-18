@@ -23,6 +23,7 @@ NXIOS=<NXIOS>
 NTASKS=<NTASKS>
 NODES=<NODES>
 NCPN=<NCPN>
+NPYCPL=<NPYCPL>
 #########################################################################
 
  CONFIG=<CONFIG>
@@ -86,6 +87,7 @@ P_CDF_DIR=${PDIR}/RUN_${CONFIG}/${CONFIG_CASE}/CTL/CDF  # directory from which t
 P_EXE_DIR=${PDIR}/RUN_${CONFIG}/${CONFIG_CASE}/EXE      # directory where to find opa
 P_UTL_DIR=${WORKDIR}                                    # root directory of the build_nc programs (under bin )
 P_XIOS_DIR=${WORKDIR}/DEV/xios-2.5_rev_1660             # root directory of the XIOS library and xios_server.exe
+P_PY_DIR=${WORKDIR}/MORAYS                              # root directory of the python libraries
 
 P_OBS_DIR=/ccc/work/cont003/drakkar/drakkar     # for OBS operation
   P_ENA_DIR=${P_OBS_DIR}/ENACT-ENS
@@ -101,6 +103,10 @@ MERGE_EXEC=$P_UTL_DIR/bin/mergefile_mpp2.exe           # rebuild program (REBUIL
                                                        # or in specific job (MERGE=0). MERGE and corresponding cores number
                                                        # are set in CTL/${SUBMIT_SCRIPT}
                                                        # if you want netcdf4 output use mergefile_mpp4.exe
+PYEXEC=$P_EXE_DIR/main.py                              # OASIS coupled executable - comment to ignore
+MODELS=$P_EXE_DIR/models.py
+if [ ! -f $PYEXEC ]; then ln -s $P_PY_DIR/main.py $PYEXEC ; fi
+if [ ! -f $MODELS ]; then ln -s $P_PY_DIR/models.py $MODELS ; fi
 
 # In the following, set the name of some files that have a hard coded name in NEMO. Files with variable names
 # are directly set up in the corresponding namelist, the script take care of them.
