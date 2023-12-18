@@ -83,18 +83,18 @@ getblock()          {
 getinitdmp()        {
      # initial condition
      SetYears
-     tmp=$(LookInNamelist ln_tsd_init namelist namtsd_drk) ; tmp=$(normalize $tmp )
+     tmp=$(LookInNamelist ln_tsd_init namelist namtsd) ; tmp=$(normalize $tmp )
      if [ $tmp = T ] ; then 
        filter='| grep -v sn_tem_dmp | grep -v sn_sal_dmp'  # at this level always filter dmp files
-       blk=namtsd_drk ;  getfiles $blk $P_DTA_DIR $F_DTA_DIR   
+       blk=namtsd ;  getfiles $blk $P_DTA_DIR $F_DTA_DIR   
                          getweight $blk $P_WEI_DIR $F_WEI_DIR
      fi
      # damping files (TRADMP is set in nemo4.sh)
      if [ $TRADMP = 1 ] ; then
-        tmp=$(LookInNamelist ln_tsd_dmp namelist namtsd_drk) ; tmp=$(normalize $tmp )
-        if [ $tmp = T ] ; then 
+        tmp=$(LookInNamelist ln_tsd_dmp namelist namtsd) ; tmp=$(normalize $tmp )
+	if [ $tmp = T ] ; then 
           filter='| grep -v sn_tem_ini | grep -v sn_sal_ini'  # at this level always filter ini files
-          blk=namtsd_drk ;  getfiles  $blk $P_DTA_DIR $F_DTA_DIR 
+          blk=namtsd ;  getfiles  $blk $P_DTA_DIR $F_DTA_DIR 
                             getweight $blk $P_WEI_DIR $F_WEI_DIR
           # get also resto file ( in case of std NEMO stuff since 3.6 )
           cn_resto=$(LookInNamelist cn_resto namelist namtra_dmp )
@@ -855,11 +855,27 @@ rename_txt_files() {
       if [ $ICE = 1  ] ; then mv namelist_ice  namelist_ice.$exten     ; fi
       if [ $TOP = 1  ] ; then mv namelist_top  namelist_top.$exten     ; fi
       if [ $CFC = 1  ] ; then mv namelist_cfc  namelist_cfc.$exten     ; fi
+      if [ $OASIS = 1 ] ; then
+          mv namcouple namcouple.$exten
+	  mv debug.root.01 debug.root.01.$exten
+	  mv debug.root.02 debug.root.02.$exten
+	  mv nout.000000 nout.000000.$exten 
+          mv eophis.out eophis.out.$exten
+          mv eophis.err eophis.err.$exten
+      fi
 
                               cp namelist_oce.$exten $P_S_DIR/ANNEX
       if [ $ICE = 1  ] ; then cp namelist_ice.$exten $P_S_DIR/ANNEX    ; fi
       if [ $TOP = 1  ] ; then cp namelist_top.$exten $P_S_DIR/ANNEX    ; fi
       if [ $CFC = 1  ] ; then cp namelist_cfc.$exten $P_S_DIR/ANNEX    ; fi
+      if [ $OASIS = 1 ] ; then
+          cp namcouple.$exten $P_S_DIR/ANNEX
+	  cp debug.root.01.$exten $P_S_DIR/ANNEX
+	  cp debug.root.02.$exten $P_S_DIR/ANNEX
+	  cp nout.000000.$exten $P_S_DIR/ANNEX
+          cp eophis.out.$exten $P_S_DIR/ANNEX
+          cp eophis.err.$exten $P_S_DIR/ANNEX
+      fi
 
       # member dependent files
       for member in  $(seq $ENSEMBLE_START $ENSEMBLE_END) ; do

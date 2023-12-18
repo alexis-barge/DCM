@@ -19,6 +19,7 @@
 # mkordre()
 # submit() 
 # runcode()
+# run_cplcode()
 # runcodescalasca()
 # lsrestart()  
 # mk_batch_hdr
@@ -126,6 +127,30 @@ runcode() {
 #         mpirun -np $*
           }
 
+# function for running coupled OPA : it takes the number of procs and name of programs as argument
+run_cplcode() {
+    rm -f ./ztask_file.conf
+    narg=$#
+    npair=$(( narg / 2 ))
+    
+    if [ $npair = 0 ] ; then  # assume the argumet is already a zapp.conf file
+        cp $1 ./ztask_file.conf
+    else
+        n1=$1
+        n2=$3
+        prog1=$2
+        prog2=$4
+
+        rm -f ./ztask_file.conf
+        echo 0-$(( n1 -1 )) " " $prog1 > ./ztask_file.conf
+        echo ${n1}-$(( n1 + n2 - 1 )) " python3 " $prog2 >> ./ztask_file.conf
+        
+    fi
+    srun --mpi=pmi2  -m cyclic -K1 \
+         --multi-prog  ./ztask_file.conf          
+             }
+# ---
+
 # function for running OPA : it takes the number of procs and name of program as argument
 # unpopulated 
 runcode_u() {
@@ -134,7 +159,7 @@ runcode_u() {
 # ---
 runcode_mpmd_dp()  {
    # call from nemo4 like: 
-   #  runcode_mpmd_dp [-cpn core per node ]  -dp $NB_NCORE_DP $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe
+   #  runcode_mpmd_dp [-cpn core per node ]  -dp $NB_NCORE_DP $NB_NPROC ./nemo4.exe $NB_NPROC_IOS ./xios_server.exe (optional) $NP_NPROC_PYCPL ./main.py
    # 
    # prepare final command to be srun --mpi=pmi2 -m arbitrary -K1 --multi-prog ./ztask_file.conf
    # with the environment SLURM_HOSTFILE=machine_file.tmp
@@ -154,6 +179,9 @@ runcode_mpmd_dp()  {
              ( 2 )  nb_core_xios=$1 ; shift 1 ; iarg=$(( iarg + 1 ))
                     xios_prog=$1     ; shift 1 ; iarg=$(( iarg + 1 ))
                     ipair=$(( ipair + 1 )) ;;
+             ( 3 )  nb_core_py=$1   ; shift 1 ; iarg=$(( iarg + 1 ))
+                    py_prog=$1       ; shift 1 ; iarg=$(( iarg + 1 ))
+                    ipair=$(( ipair + 1 )) ;;
           esac
      esac
    done
@@ -165,6 +193,9 @@ runcode_mpmd_dp()  {
    rm -f ./ztask_file.conf
    echo  0-$((${nb_core_nemo}-1))  $nemo_prog > ./ztask_file.conf
    echo  ${nb_core_nemo}-$(( nb_core_nemo + nb_core_xios -1 )) $xios_prog >> ./ztask_file.conf
+   if [ $narg -ge 8 ] ; then
+       echo  $((nb_core_nemo + nb_core_xios))-$(( nb_core_nemo + nb_core_xios + nb_core_py -1 )) " python3 " $py_prog >> ./ztask_file.conf
+   fi
 
    list_nodes_c=$(scontrol show hostname ${SLURM_NODELIST} | paste -d, -s )
    list_nodes=( $(echo ${list_nodes_c} | sed -e 's/,/ /g' ) )    # array of nodes
@@ -196,6 +227,19 @@ runcode_mpmd_dp()  {
         echo ${nd} >>  zhost_file.tmp
      done
    done
+   # then work for unpopulated node with python script
+   # + keep track of py_node for information
+   if [ $narg -ge 8 ] ; then
+       rm -f znodes_py.tmp
+       idx=$(( nb_node_full - nb_node_xios - nb_core_py ))  # index for first python node
+       for i in $( seq $idx $(( nb_node_full - nb_node_xios - 1 )) ) ; do
+         nd=${list_nodes[$i]}
+         echo $nd >> znodes_py.tmp
+         for ix in $(seq 1 ${nb_core_py}) ; do
+            echo ${nd} >>  zhost_file.tmp
+         done
+       done
+   fi
 
    export SLURM_HOSTFILE=zhost_file.tmp
 
@@ -211,29 +255,35 @@ runcode_mpmd() {
 # build a task file in the local directory, according to input parameters.
 # in the main script, prog1 is nemo, prog2 is xios. Using -m cyclic, force a bind by node, so it is
 # more clever to put xios first in the file in order to place XIOS on the first socket of various nodes.
-         rm -f ./ztask_file.conf
-         narg=$#
-         npair=$(( narg / 2 ))
-         if [ $npair = 0 ] ; then  # assume the argumet is already a zapp.conf file
-          cp $1 ./ztask_file.conf
-         else
+    rm -f ./ztask_file.conf
+    narg=$#
+    npair=$(( narg / 2 ))
+    
+    if [ $npair = 0 ] ; then  # assume the argumet is already a zapp.conf file
+        cp $1 ./ztask_file.conf
+    else
+        n1=$1
+        n2=$3
+        prog1=$2
+        prog2=$4
 
-n1=$1
-n2=$3
-prog1=$2
-prog2=$4
-
-rm -f ./ztask_file.conf
-echo 0-$(( n2 - 1 ))         " " $prog2 > ./ztask_file.conf
-echo ${n2}-$(( n1 + n2 -1 )) " " $prog1 >> ./ztask_file.conf
+        rm -f ./ztask_file.conf
+        echo 0-$(( n1 - 1 )) " " $prog1 > ./ztask_file.conf
+        echo ${n1}-$(( n1 + n2 -1 ))         " " $prog2 >> ./ztask_file.conf
+        
+        if [ $# -ge 6 ] ; then
+            n3=$5
+            prog3=$6
+	    echo $((n1 + n2))-$(( n1 + n2 + n3 -1 )) " python3 " $prog3 >> ./ztask_file.conf
         fi
+    fi
 
-#srun --mpi=pmi2 -m cyclic --multi-prog  ./ztask_file.conf
-srun --mpi=pmi2  -m cyclic -K1 \
-    --multi-prog  ./ztask_file.conf
+    #srun --mpi=pmi2 -m cyclic --multi-prog  ./ztask_file.conf
+    srun --mpi=pmi2  -m cyclic -K1 \
+         --multi-prog  ./ztask_file.conf
                }
 # ---
-         
+ 
 # ---
 # function for running OPA ans XIOS : it takes the number of procs and name of programs as argument
 #    runcode_mpmdOLD  nproc1 prog1    nproc2 prog2   ... nprocn progn

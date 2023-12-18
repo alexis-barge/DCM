@@ -31,6 +31,8 @@
 #svn co -r 15299 https://forge.ipsl.jussieu.fr/nemo/svn/NEMO/trunk NEMO4
 ######  4.2.x (gitlab) starts here ###############
 # as of April,7 2022
-commit=26911cc471c9316f7a67495d4fd544dce35b758d
-git clone git@forge.nemo-ocean.eu:nemo/nemo.git NEMO4
+#commit=26911cc471c9316f7a67495d4fd544dce35b758d
+# as of June 30, 2023 (4.2.1)
+commit=9c0f2d511690c30aec45516361e032c5b46a94f5
+git clone --branch 4.2.1 https://forge.nemo-ocean.eu/nemo/nemo.git NEMO4
 cd NEMO4 ; git checkout $commit

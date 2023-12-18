@@ -10,6 +10,14 @@
 #SBATCH --time=1:00:00
 #SBATCH --exclusive
 
+# Python environment -- complete/modify/comment as you wish
+# ---------------------------------------------------------
+source $P_PYOASIS_DIR/python/init.sh
+source $P_PYOASIS_DIR/python/init.csh
+source ${HOME}/.bashrc
+conda activate eophis
+# ----------- 
+
 set -x
 ulimit -s 
 ulimit -s unlimited
@@ -31,6 +39,10 @@ export NB_NPROC=39     # number of cores used for NEMO
 export NB_NPROC_IOS=1  # number of cores used for xios (number of xios_server.exe)
 export NB_NCORE_DP=0   # activate depopulated core computation for XIOS. If not 0, RUN_DP is
                        # the number of cores used by XIOS on each exclusive node.
+
+# OASIS coupling - set to 0 if not
+export NB_NPROC_PYCPL=0   # number of cores used for coupled python script
+
 # Rebuild process 
 export MERGE=0         # 1 = on the fly rebuild, 0 = dedicated job
 export NB_NPROC_MER=15 # number of cores used for rebuild on the fly  (1/node is a good choice)
