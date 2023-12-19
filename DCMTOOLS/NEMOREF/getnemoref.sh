@@ -35,4 +35,4 @@
 # as of June 30, 2023 (4.2.1)
 commit=9c0f2d511690c30aec45516361e032c5b46a94f5
 git clone --branch 4.2.1 https://forge.nemo-ocean.eu/nemo/nemo.git NEMO4
-cd NEMO4 ; git checkout $commit
+cd NEMO4  ;  git checkout $commit

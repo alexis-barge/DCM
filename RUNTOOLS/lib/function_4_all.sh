@@ -794,11 +794,12 @@ renamerst() {
  znitend=$(LookInNamelist nn_itend  namelist)
  znitend=$( printf "%08d" $znitend )
  filext='nc'
+ zcore0='0000'
 
  # Loop on cores for current member [ renamerst is called in the member loop, mmm is known ]
  set -x   # avoid very long list of statements in the log file
- zrstdir='./'
- if [ $RST_DIRS = 1 ] ; then zrstdir=$DDIR/${CN_DIRRST}.$ext/$nnn/ ; fi
+ zrstdir=${CN_RST}
+ if [ $RST_DIRS = 1 ] ; then zrstdir=${CN_RST}.$ext/$nnn/ ; fi
 
 #          clname = TRIM(cexper)//"_"//TRIM(ADJUSTL(clkt))//"_"//TRIM(cn_ocerst_out)
 #          rstout = <CONFIG_CASE><.MBR>_<nitend>_<CN_RST_OUT>_<CORE>.<FILEXT>
@@ -808,7 +809,7 @@ renamerst() {
  for rest in ${CONFIG_CASE}${mmm}_${znitend}_${2}_[[:digit:]]*[[:digit:]].${filext} ; do
      if [ $RST_READY = 1 ] ; then
        CORE=${rest%.*} ; CORE=${CORE##*_}
-       rest_in=${1}-${ext}${mmm}_${CORE}.${filext}
+       rest_in=${1}${mmm}_${CORE}.${filext}
        mv $rest $rest_in
      else
        rest_in=${1}${mmm}_$( tmp=${rest##*_} ; echo ${tmp%.${filext}} ).${filext}
@@ -828,7 +829,7 @@ renamerst() {
        for rest in ${idx}_${CONFIG_CASE}${mmm}_${znitend}_${2}_[[:digit:]]*[[:digit:]].${filext} ; do
           if [ $RST_READY = 1 ] ; then
              CORE=${rest%.*} ; CORE=${CORE##*_}
-             rest_in=${idx}_${1}-${ext}${mmm}_${CORE}.${filext}
+             rest_in=${idx}_${1}${mmm}_${CORE}.${filext}
              mv $rest $rest_in
           else
              rest_in=${idx}_${1}${mmm}_$( tmp=${rest##*_} ; echo ${tmp%.${filext}} ).${filext}
@@ -943,7 +944,7 @@ mktarrst() {  echo "   *** making tar restart file for ${1}$3 "
  filext='nc'
  cd $zrstdir
  if [ $RST_READY = 1 ] ; then
-    lscmd="/bin/ls -l  ${1%.*}-${ext}${mmm}_[[:digit:]]*[[:digit:]].${filext}"
+    lscmd="/bin/ls -l  ${1%.*}${mmm}_[[:digit:]]*[[:digit:]].${filext}"
  else
     lscmd="/bin/ls -l  ${1}_[[:digit:]]*[[:digit:]].${filext}.$ext"
  fi
@@ -962,7 +963,7 @@ mktarrst() {  echo "   *** making tar restart file for ${1}$3 "
     for idx in $nst_lst ; do
        set +x   # avoid very long list of file
        if [ $RST_READY = 1 ] ; then
-         lscmd="/bin/ls -l  ${idx}_${1%.*}-${ext}${mmm}_[[:digit:]]*[[:digit:]].${filext}"
+         lscmd="/bin/ls -l  ${idx}_${1%.*}${mmm}_[[:digit:]]*[[:digit:]].${filext}"
        else
          lscmd="/bin/ls -l  ${idx}_${1}_[[:digit:]]*[[:digit:]].${filext}.$ext"
        fi
@@ -1008,8 +1009,8 @@ cat << eof >> $1    # Submit script name given as argument
  for member in \$(seq $ENSEMBLE_START $ENSEMBLE_END) ; do
    mmm=\$(getmember_extension \$member)
    nnn=\$(getmember_extension \$member nodot )
-   zrstdir='./'
-   if [ \$RST_DIRS = 1 ] ; then zrstdir=$DDIR/${CN_DIRRST}.\$ext/\$nnn ; fi
+   zrstdir=${CN_RST}
+   if [ \$RST_DIRS = 1 ] ; then zrstdir=${CN_RST}.\$ext/\$nnn ; fi
    # create secondary scripts to be submitted in // trhough the members
    # $ to be maintained in the final script are replaces by @, then automatic edition
    # replace the @ by $ [ this is necessary because we are at the second level of script
@@ -1029,7 +1030,13 @@ cat << eof >> $1    # Submit script name given as argument
    mmm=\$mmm
    zrstdir=\$zrstdir
    cd $DDIR
-   tar cf $F_R_DIR/${CONFIG_CASE}\${mmm}-RST.$ext.tar ${CONFIG_CASE}-RST.$ext/\$mmm
+   TARNAME=$F_R_DIR/${CONFIG_CASE}\${mmm}-RST.tar 
+   RST2TAR=${zrstdir}
+   if [ \$RST_DIRS = 1 ] ; then 
+       TARNAME=$F_R_DIR/${CONFIG_CASE}\${mmm}-RST.$ext.tar ; fi
+       RST2AR=${CN_RST}.\$ext/\$mmm
+   fi
+   tar cf ${TARNAME} ${RSRT2AR}
 eof1
    cat ztmprst | sed -e 's/@/\$/g' > ./$1\${mmm}.sh    # change @ into \$ and create script for current member
    chmod 755 ./$1\${mmm}.sh                         # made it executable
@@ -1076,8 +1083,8 @@ cat << eof >> $1    # Submit script name given as argument
  for member in \$(seq $ENSEMBLE_START $ENSEMBLE_END) ; do
    mmm=\$(getmember_extension \$member)
    nnn=\$(getmember_extension \$member nodot )
-   zrstdir='./'
-   if [ \$RST_DIRS = 1 ] ; then zrstdir=$DDIR/${CN_DIRRST}.\$ext/\$nnn ; fi
+   zrstdir=${CN_RST}
+   if [ \$RST_DIRS = 1 ] ; then zrstdir=$DDIR/${CN_RST}.\$ext/\$nnn ; fi
    # create secondary scripts to be submitted in // trhough the members
    # $ to be maintained in the final script are replaces by @, then automatic edition
    # replace the @ by $ [ this is necessary because we are at the second level od script

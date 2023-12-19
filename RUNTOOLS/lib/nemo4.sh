@@ -25,10 +25,14 @@ mkdir -p  $P_S_DIR
 mkdir -p  $P_S_DIR/ANNEX
 
 ## Generic name for some directories
-CN_DIAOBS=${DDIR}/${CONFIG_CASE}-DIAOBS     # receive files from diaobs functionality, if used
-CN_DIRRST=${DDIR}/${CONFIG_CASE}-RST        # receive restart files
-CN_DIRICB=${DDIR}/${CONFIG_CASE}-ICB        # receive Iceberg Output files
-CN_DIROUT=${DDIR}/${CONFIG_CASE}-XIOS       # root of XIOS output
+CN_DIAOBS=${DDIR}/${CONFIG_CASE}-DIAOBS   # receive files from diaobs functionality, if used
+CN_DIRICB=${DDIR}/${CONFIG_CASE}-ICB      # receive Iceberg Output files
+CN_DIROUT=${DDIR}/${CONFIG_CASE}-XIOS     # root of XIOS output
+if [ -n "${URSTDIR}" ] ; then               # receive restart file 
+    CN_RST=${URSTDIR}                     # defined in includefile.sh
+else
+    CN_RST=${DDIR}/${CONFIG_CASE}-RST     # default    
+fi
 
 ## -----------------------------------------------------
 echo '(1) get all the working tools on the TMPDIR directory'
@@ -138,6 +142,7 @@ TOP=0     ;  if [ $(keychk key_top )     ] ; then TOP=1     ; fi
 FLOAT=0   ;  if [ $(keychk key_floats)   ] ; then FLOAT=1   ; fi
 CYCL=0    ;  if [ $(keychk key_cyclone)  ] ; then CYCL=1    ; fi
 DIAHARM=0 ;  if [ $(keychk key_diaharm)  ] ; then DIAHARM=1 ; fi
+DRAKKAR=0 ;  if [ $(keychk key_drakkar)  ] ; then DRAKKAR=1 ; fi
 OASIS=0   ;  if [ $(keychk key_oasis3)   ] ; then OASIS=1   ; fi
 
 # JMM fix for the time being
@@ -183,6 +188,9 @@ elif [ $OASIS -eq 0 ] && [ $NB_NPROC_PYCPL -gt 0 ] ; then
     exit 1
 fi
 
+#DRAKKAR version
+echo "   *** DRAKKAR = " ${DRAKKAR}
+
 ## -------------------------------------
 echo '(2) Set up the namelist for this run from template'
 echo '--------------------------------------------------'
@@ -198,6 +206,13 @@ if [ $no != 1 ] ; then
     restart_flag=true
 else
     restart_flag=false
+fi
+
+# current restart directory
+if [ $RST_DIRS = 1 ] ; then
+    CN_DIRRST=${CN_RST}.$no
+else
+    CN_DIRRST=${CN_RST}
 fi
 
 sed -e "s/<NN_NO>/$no/" \
@@ -299,11 +314,9 @@ if [ $DIAOBS = 1 ] ; then
     mkdir -p ${CN_DIAOBS}.$no 
 fi
 
+echo "   ***  Check/Create directory : ${CN_DIRRST}"
+mkdir -p ${CN_DIRRST}
 
-if [ $RST_DIRS = 1 ] ; then 
-    echo "   ***  Check/Create directory : ${CN_DIRRST}.$no"
-    mkdir -p ${CN_DIRRST}.$no
-fi
 
 rdt=$(LookInNamelist rn_Dt)
 
@@ -555,7 +568,7 @@ if [ $ENSEMBLE = 1 ] ; then
         nnn=$(getmember_extension $member  nodot )  # number of the member without .
         mkdir -p  ${CN_DIROUT}.${no}/$nnn
         if [ $RST_DIRS = 1 ] ; then
-            mkdir -p  ${CN_DIRRST}.${no}/$nnn
+            mkdir -p  ${CN_RST}.${no}/$nnn
         fi
     done
 fi
@@ -864,18 +877,23 @@ else
             mmm=$(getmember_extension $member)          # if no ensemble, this function return empty string
             nnn=$(getmember_extension $member  nodot )  # number of the member without .
 
-            zrstdir='./'   # set zrstdir to RST directory if used
-            if [ $RST_DIRS = 1 ] ; then zrstdir=${CN_DIRRST}.$prev_ext/$nnn/ ; fi
+            zindir=${CN_RST}   # set zrstdir to RST directory if used
+            zrstdir=${zrstdir}   # set zrstdir to RST directory if used
+            if [ $RST_DIRS = 1 ] ; then 
+	        zrstdir=${CN_RST}.$prev_ext/$nnn/
+	        zindir=${CN_RST}.$no/$nnn
+	    fi
 
             if [  $ln_ens_rst_in = F ] ; then mmm='' ; fi # force mmm to empty string if ln_ens_rst_in = false
 
-            if [ $RST_READY = 1 ] ; then
-                OCE_RST_IN=$(LookInNamelist cn_ocerst_in )-${prev_ext}$mmm
-                ICE_RST_IN=$(LookInNamelist cn_icerst_in namelist_ice)-${prev_ext}$mmm
-                TRC_RST_IN=$(LookInNamelist cn_trcrst_in namelist_top)-${prev_ext}$mmm
-                TRD_RST_IN=$(LookInNamelist cn_trdrst_in )-${prev_ext}$mmm
-                STO_RST_IN=$(LookInNamelist cn_storst_in )-${prev_ext}$mmm
-                ICB_RST_IN=$(LookInNamelist cn_icbrst_in )-${prev_ext}$mmm
+            if [ $RST_READY = 1 ] || [ $DRAKKAR ] ; then
+                OCE_RST_IN=$(LookInNamelist cn_ocerst_in )$mmm
+                ICE_RST_IN=$(LookInNamelist cn_icerst_in namelist_ice)$mmm
+                TRC_RST_IN=$(LookInNamelist cn_trcrst_in namelist_top)$mmm
+                TRD_RST_IN=$(LookInNamelist cn_trdrst_in )$mmm
+                STO_RST_IN=$(LookInNamelist cn_storst_in )$mmm
+                ICB_RST_IN=$(LookInNamelist cn_icbrst_in )$mmm
+		if [ $RST_DIRS = 1 ] ; then ln -sf ${zrstdir}/* ${zindir}/. ; fi
             else
 ##### O C E A N
 ###############
@@ -907,13 +925,13 @@ else
       # link  the xxx.${filext}.$prev_ext files to xxx.${filext}  (no extension).
                 cd $zrstdir
                 for rest in ${OCE_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                    ln -sf $rest  ${rest%.$prev_ext} 
+                    ln -sf ${zrstdir}/$rest  ${zindir}/${rest%.$prev_ext} 
                 done
 
                 if [ $AGRIF = 1 ] ; then
                     for idx in ${agrif_pref[@]} ; do
                         for rest in ${idx}_${OCE_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                            ln -sf $rest  ${rest%.$prev_ext} 
+                            ln -sf ${zrstdir}/$rest  ${zindir}/${rest%.$prev_ext} 
                         done
                     done
                 fi
@@ -949,13 +967,13 @@ else
       # link  the xxx.${filext}.$prev_ext files to xxx.${filext}  (no extension).
                  cd $zrstdir
                  for rest in ${ICE_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                     ln -sf $rest  ${rest%.$prev_ext} 
+                     ln -sf ${zrstdir}/$rest  ${zindir}/${rest%.$prev_ext} 
                  done
 
                  if [ $AGRIF = 1 ] ; then
                      for idx in ${agrif_pref[@]} ; do
                          for rest in ${idx}_${ICE_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                             ln -sf $rest  ${rest%.$prev_ext} 
+                             ln -sf ${zrstdir}/$rest  ${zindir}/${rest%.$prev_ext} 
                          done
                      done
                  fi
@@ -999,7 +1017,7 @@ else
            # restart files are archived with the correct TRC_RST_IN prefix !
                         cd $zrstdir
                         for rest in ${TRC_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                            ln -sf $rest  ${rest%.$prev_ext} 
+                            ln -sf ${zrstdir}/$rest  ${zindir}/${rest%.$prev_ext} 
                         done
                         cd -
                     fi
@@ -1037,7 +1055,7 @@ else
          # remove the prev_ext from the name file
                     cd $zrstdir
                     for rest in ${TRD_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                        ln -sf $rest ${rest%.$prev_ext}
+                        ln -sf ${zrstdir}/$rest ${zindir}/${rest%.$prev_ext}
                     done
                     cd -
                 fi
@@ -1070,7 +1088,7 @@ else
         # remove the prev_ext from the name file
                 cd $zrstdir
                 for rest in ${STO_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                    ln -sf $rest ${rest%.$prev_ext}
+                    ln -sf ${zrstdir}/$rest ${zindir}/${rest%.$prev_ext}
                 done
                 cd -
             fi
@@ -1103,7 +1121,7 @@ else
         # remove the prev_ext from the name file
                 cd $zrstdir
                 for rest in ${ICB_RST_IN}_[[:digit:]]*[[:digit:]].${filext}.$prev_ext ; do
-                    ln -sf $rest ${rest%.$prev_ext}
+                    ln -sf ${zrstdir}/$rest ${zindir}/${rest%.$prev_ext}
                 done
                 cd -
             fi
@@ -1201,7 +1219,7 @@ case $STOP_FLAG in
     echo "   ***  Run OK"
     echo ' [5.2] rename  the restart files'
     echo ' ==============================='
-    if [ $RST_READY = 1 ] ; then
+    if [ $DRAKKAR = 1 ] ; then
        echo "   *** Restart files are ready from NEMO ..."
     else
     for member in  $(seq $ENSEMBLE_START $ENSEMBLE_END) ; do
