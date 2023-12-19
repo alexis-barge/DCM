@@ -38,7 +38,8 @@ QUEUE=none         # queue name (e.g. curie )
 WORKDIR=/scratch/$USER
 TMPDIR=$WORKDIR/TMPDIR_${CONFIG_CASE}
 MACHINE=<MACHINE>
-URSTDIR=  #'./'
+DIRRST=  #'./'
+DIROUT=  #'./'
 
 case  $MACHINE  in
 ( occigen | jean-zay ) SUBMIT=sbatch  ;;
