@@ -1009,7 +1009,7 @@ cat << eof >> $1    # Submit script name given as argument
  for member in \$(seq $ENSEMBLE_START $ENSEMBLE_END) ; do
    mmm=\$(getmember_extension \$member)
    nnn=\$(getmember_extension \$member nodot )
-   zrstdir=${CN_RST}
+   zrstdir=$CN_RST
    if [ \$RST_DIRS = 1 ] ; then zrstdir=${CN_RST}.\$ext/\$nnn ; fi
    # create secondary scripts to be submitted in // trhough the members
    # $ to be maintained in the final script are replaces by @, then automatic edition
@@ -1030,13 +1030,7 @@ cat << eof >> $1    # Submit script name given as argument
    mmm=\$mmm
    zrstdir=\$zrstdir
    cd $DDIR
-   TARNAME=$F_R_DIR/${CONFIG_CASE}\${mmm}-RST.tar 
-   RST2TAR=${zrstdir}
-   if [ \$RST_DIRS = 1 ] ; then 
-       TARNAME=$F_R_DIR/${CONFIG_CASE}\${mmm}-RST.$ext.tar ; fi
-       RST2AR=${CN_RST}.\$ext/\$mmm
-   fi
-   tar cf ${TARNAME} ${RSRT2AR}
+   tar cf $CN_TARDIR $zrstdir
 eof1
    cat ztmprst | sed -e 's/@/\$/g' > ./$1\${mmm}.sh    # change @ into \$ and create script for current member
    chmod 755 ./$1\${mmm}.sh                         # made it executable

@@ -211,8 +211,10 @@ fi
 # current restart directory
 if [ $RST_DIRS = 1 ] ; then
     CN_DIRRST=${CN_RST}.$no
+    CN_TARDIR=$F_R_DIR/${CONFIG_CASE}${mmm}-RST.$no.tar
 else
     CN_DIRRST=${CN_RST}
+    CN_TARDIR=$F_R_DIR/${CONFIG_CASE}${mmm}-RST.tar
 fi
 
 sed -e "s/<NN_NO>/$no/" \
@@ -878,7 +880,7 @@ else
             nnn=$(getmember_extension $member  nodot )  # number of the member without .
 
             zindir=${CN_RST}   # set zrstdir to RST directory if used
-            zrstdir=${zrstdir}   # set zrstdir to RST directory if used
+            zrstdir=${zindir}   # set zrstdir to RST directory if used
             if [ $RST_DIRS = 1 ] ; then 
 	        zrstdir=${CN_RST}.$prev_ext/$nnn/
 	        zindir=${CN_RST}.$no/$nnn
@@ -886,14 +888,16 @@ else
 
             if [  $ln_ens_rst_in = F ] ; then mmm='' ; fi # force mmm to empty string if ln_ens_rst_in = false
 
-            if [ $RST_READY = 1 ] || [ $DRAKKAR ] ; then
+            if [ $RST_READY = 1 ] || [ $DRAKKAR = 1 ] ; then
                 OCE_RST_IN=$(LookInNamelist cn_ocerst_in )$mmm
                 ICE_RST_IN=$(LookInNamelist cn_icerst_in namelist_ice)$mmm
                 TRC_RST_IN=$(LookInNamelist cn_trcrst_in namelist_top)$mmm
                 TRD_RST_IN=$(LookInNamelist cn_trdrst_in )$mmm
                 STO_RST_IN=$(LookInNamelist cn_storst_in )$mmm
                 ICB_RST_IN=$(LookInNamelist cn_icbrst_in )$mmm
-		if [ $RST_DIRS = 1 ] ; then ln -sf ${zrstdir}/* ${zindir}/. ; fi
+		if [ $RST_DIRS = 1 ] ; then 
+		    ln -sf ${zrstdir}/* ${zindir}/.
+	        fi
             else
 ##### O C E A N
 ###############
@@ -1308,8 +1312,8 @@ case $STOP_FLAG in
     echo ' [5.5] Make restart tar files '
     echo ' ============================='
      # Build a script (to be submitted) for saving the individual ${filext}.$ext 
-     # restart files into a set of tar files and expatrie_res them.
-    mksavrst  zsrst.$ext.sh   
+     # restart files into a set of tar files and expatrie_res them 
+     mksavrst  zsrst.$ext.sh   
 
      # Submit the save-restart script 
      # When this script is finished ( asynchronously), there is a touch statement on file RST_DONE$mmm.$ext,
