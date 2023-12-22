@@ -44,7 +44,6 @@ QUEUE=none         # queue name (e.g. curie )
 TMPDIR=$WORKDIR/TMPDIR_${CONFIG_CASE}_<JPNI>_<JPNJ>_<JPNIJ>
 MACHINE=$MACHINE
 DIRRST=  #'./'
-DIROUT=  #'./'
 
 case  $MACHINE  in
 ( occigen | jean-zay) SUBMIT=sbatch  ;;

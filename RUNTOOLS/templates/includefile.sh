@@ -39,7 +39,6 @@ WORKDIR=/scratch/$USER
 TMPDIR=$WORKDIR/TMPDIR_${CONFIG_CASE}
 MACHINE=<MACHINE>
 DIRRST=  #'./'
-DIROUT=  #'./'
 
 case  $MACHINE  in
 ( occigen | jean-zay ) SUBMIT=sbatch  ;;
