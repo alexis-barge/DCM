@@ -27,7 +27,7 @@ mkdir -p  $P_S_DIR/ANNEX
 ## Generic name for some directories
 CN_DIAOBS=${DDIR}/${CONFIG_CASE}-DIAOBS   # receive files from diaobs functionality, if used
 CN_DIRICB=${DDIR}/${CONFIG_CASE}-ICB      # receive Iceberg Output files
-if [ -n "${OUTDIR}" ] ; then              # root of XIOS output
+if [ -n "${DIROUT}" ] ; then              # root of XIOS output
    CN_DIROUT=${DIROUT}                         # defined in includefile.sh
 else
    CN_DIROUT=${DDIR}/${CONFIG_CASE}-XIOS       # default
