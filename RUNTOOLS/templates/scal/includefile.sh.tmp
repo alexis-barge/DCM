@@ -107,8 +107,8 @@ MERGE_EXEC=$P_UTL_DIR/bin/mergefile_mpp2.exe           # rebuild program (REBUIL
                                                        # if you want netcdf4 output use mergefile_mpp4.exe
 PYEXEC=$P_EXE_DIR/main.py                              # OASIS coupled executable - comment to ignore
 MODELS=$P_EXE_DIR/models.py
-ln -s $P_PY_DIR/main.py $PYEXEC
-ln -s $P_PY_DIR/models.py $MODELS
+ln -sf $P_PY_DIR/main.py $PYEXEC
+ln -sf $P_PY_DIR/models.py $MODELS
 
 # In the following, set the name of some files that have a hard coded name in NEMO. Files with variable names
 # are directly set up in the corresponding namelist, the script take care of them.
