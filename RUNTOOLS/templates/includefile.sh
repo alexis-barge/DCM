@@ -84,6 +84,7 @@ P_EXE_DIR=${PDIR}/RUN_${CONFIG}/${CONFIG_CASE}/EXE      # directory where to fin
 P_UTL_DIR=${WORKDIR}                                    # root directory of the build_nc programs (under bin )
 P_XIOS_DIR=${WORKDIR}/XIOS                              # root directory of the XIOS library and xios_server.exe
 P_PY_DIR=${WORKDIR}/MORAYS                              # root directory of the python libraries
+P_PY_WEI_DIR=${P_PY_DIR}/ML_WEIGHTS                     # root directory of additional python weights
 
 P_OBS_DIR=/ccc/work/cont003/drakkar/drakkar     # for OBS operation
   P_ENA_DIR=${P_OBS_DIR}/ENACT-ENS
@@ -101,6 +102,7 @@ MERGE_EXEC=$P_UTL_DIR/bin/mergefile_mpp2.exe           # rebuild program (REBUIL
                                                        # if you want netcdf4 output use mergefile_mpp4.exe
 PYEXEC=$P_EXE_DIR/main.py                              # OASIS coupled executable - comment to ignore
 MODELS=$P_EXE_DIR/models.py
+WEIGHTS=cnn_weights_1_4.pt			       # python model weights, will be ignored if not found
 ln -sf $P_PY_DIR/main.py $PYEXEC
 ln -sf $P_PY_DIR/models.py $MODELS
 

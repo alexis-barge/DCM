@@ -87,6 +87,11 @@ if [ $NB_NPROC_PYCPL -ne 0 ] ; then
         echo "   === ERROR: Python coupled config asked but models library not found"
         exit 1
     fi
+    if [ -f $P_PY_WEI_DIR/$WEIGHTS ] ; then
+	rcopy $P_PY_WEI_DIR/$WEIGHTS ./$WEIGHTS
+    else
+        echo "   --- WARNING: Python coupled config asked but no additional weight files found, ignored"
+    fi
 fi
 
 # copy list of CPPkeys ( available in EXE directory
